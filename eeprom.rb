@@ -119,32 +119,6 @@ module SFP
 
     attr_accessor :identifier, :ext_identifier, :connector, :transciever, :encoding, :br, :length_sm_km, :length_sm_100m, :length_mm500_10m, :length_mm625_10m, :length_copper, :vendor_name, :vendor_oui, :vendor_pn, :vendor_rev, :wavelength, :options, :br_max, :br_min, :vendor_sn, :date_code, :diagnostic_monitoring_type, :enhanced_options, :sff_8472_compliance, :vendor_specific
 
-    @identifier = 0
-    @ext_identifier = 0
-    @connector = 0
-    @transciever = 0
-    @encoding = 0
-    @br = 0
-    @length_sm_km = 0
-    @length_sm_100m = 0
-    @length_mm500_10m = 0
-    @length_mm625_10m = 0
-    @length_copper = 0
-    @vendor_name = ""
-    @vendor_oui = [0x00, 0x00, 0x00]
-    @vendor_pn = ""
-    @vendor_rev = ""
-    @wavelength = 0
-    @options = 0
-    @br_max = 0x00
-    @br_min = 0x00
-    @vendor_sn = ""
-    @date_code = "00000000"
-    @diagnostic_monitoring_type = 0
-    @enhanced_options = 0
-    @sff_8472_compliance = 0
-    @vendor_specific = ""
-
     def to_hex
       base = [@identifier, @ext_identifier, @connector, @transciever>>32, @transciever, @encoding, @br, 0, @length_sm_km, @length_sm_100m, @length_mm500_10m, @length_mm625_10m, @length_copper, 0, @vendor_name, 0, @vendor_oui.pack('C3'), @vendor_pn, @vendor_rev, @wavelength, 0].pack("CCCNNCCCCCCCCCA16Ca3A16A4nC")
 
@@ -163,17 +137,49 @@ module SFP
     end
 
     def to_hexstr
-      return to_hex.unpack("H*")
+      return to_hex.unpack("H*")[0]
     end
 
-    def initialize()
+    def initialize(str=nil)
+      @identifier = 0
+      @ext_identifier = 0
+      @connector = 0
+      @transciever = 0
+      @encoding = 0
+      @br = 0
+      @length_sm_km = 0
+      @length_sm_100m = 0
+      @length_mm500_10m = 0
+      @length_mm625_10m = 0
+      @length_copper = 0
+      @vendor_name = ""
+      @vendor_oui = [0x00, 0x00, 0x00]
+      @vendor_pn = ""
+      @vendor_rev = ""
+      @wavelength = 0
+      @options = 0
+      @br_max = 0x00
+      @br_min = 0x00
+      @vendor_sn = ""
+      @date_code = ""
+      @diagnostic_monitoring_type = 0
+      @enhanced_options = 0
+      @sff_8472_compliance = 0
+      @vendor_specific = ""
+
+      if !str.nil? && str.length == 256
+        parse_hexstr(str)
+      else
+        return
+      end
     end
 
-    def initialize(str)
+    def parse_hexstr(str)
+      return false if str.length != 256
       tr_1 = nil
       tr_2 = nil
       oui = nil
-      @identifier, @ext_identifier, @connector, tr_1, tr_2, @encoding, @br, a,@length_sm_km, @length_sm_100m, @length_mm500_10m, @length_mm625_10m, @length_copper,a,@vendor_name,a, oui, @vendor_pn, @vendor_rev, @wavelength,a,a,@options, @br_max, @br_min, @vendor_sn, @date_code, @diagnostic_monitoring_type, @enhanced_options, @sff_8472_compliance, a, @vendor_specific = [str].pack("H*").unpack("CCCNNCCCCCCCCCA16Ca3A16A4nCCnCCA16A8CCCCa*")
+      @identifier, @ext_identifier, @connector, tr_1, tr_2, @encoding, @br, a, @length_sm_km, @length_sm_100m, @length_mm500_10m, @length_mm625_10m, @length_copper,a, @vendor_name,a, oui, @vendor_pn, @vendor_rev, @wavelength,a,a,@options, @br_max, @br_min, @vendor_sn, @date_code, @diagnostic_monitoring_type, @enhanced_options, @sff_8472_compliance, a, @vendor_specific = [str].pack("H*").unpack("CCCNNCCCCCCCCCA16Ca3A16A4nCCnCCA16A8CCCCa*")
       @transciever = (tr_1<<32) + tr_2
       @vendor_oui = oui.unpack('C3')
     end
