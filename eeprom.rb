@@ -1,17 +1,56 @@
 module SFP
   module IDENTIFIER
-    UNKNOWN = 0
-    GBIC = 1
-    SOLDERED = 2
-    SFP = 3
+    UNKNOWN = 0x00
+    GBIC = 0x01
+    SOLDERED = 0x02
+    SFP = 0x03
+    XBI_300 = 0x04
+    XENPAK = 0x05
+    XFP = 0x06
+    XFF = 0x07
+    XFP_E = 0x08
+    XPAK = 0x09
+    X2 = 0x0A
+    DWDM_SFP = 0x0B
+    QSFP = 0x0C
+    QSFPP = 0x0D
+    CXP = 0x0E
+
+    def self.value name
+      self.const_get(name.to_s)
+    end
+
+    def self.all
+      self.constants.map{|name| self.const_get(name) }
+    end
   end
 
   module CONNECTOR
-    UNKNOWN = 0
-    SC = 1
-    LC = 7
-    MTRJ = 8
-    MU = 9
+    UNKNOWN = 0x00
+    SC = 0x01
+    FC_1_COPPER = 0x02
+    FC_2_COPPER = 0x03
+    BNC_TNC = 0x04
+    FC_COAX_HEADERS = 0x05
+    FIBERJACK = 0x06
+    LC = 0x07
+    MTRJ = 0x08
+    MU = 0x09
+    SG = 0x0A
+    OPTICAL_PIGTAIL = 0x0B
+    MPO = 0x0C
+    HSSDC_II = 0x20
+    COPPER_PIGTAIL = 0x21
+    RJ45 = 0x22
+
+
+    def self.value name
+      self.const_get(name.to_s)
+    end
+
+    def self.all
+      self.constants.map{|name| self.const_get(name) }
+    end
   end
 
   module TRANSCIEVER
@@ -74,6 +113,14 @@ module SFP
     FC_SPEED_400M = 1<<4
     FC_SPEED_200M = 1<<2
     FC_SPEED_100M = 1
+
+    def self.value name
+      self.const_get(name.to_s)
+    end
+
+    def self.all
+      self.constants.map{|name| self.const_get(name) }
+    end
   end
 
   module ENCODING
@@ -81,11 +128,42 @@ module SFP
     ENC_4B5B = 2
     ENC_NRZ = 3
     ENC_MANCHESTER = 4
+    ENC_SONET_SCRAMBLED = 5
+    ENC_64B66B = 6
+
+    def self.value name
+      self.const_get(name.to_s)
+    end
+
+    def self.all
+      self.constants.map{|name| self.const_get(name) }
+    end
   end
 
   module BR
     BR_1250M = 0x0d
     BR_2125M = 0x15
+
+    def self.value name
+      self.const_get(name.to_s)
+    end
+
+    def self.all
+      self.constants.map{|name| self.const_get(name) }
+    end
+  end
+
+  module RATE_IDENTIFIER
+    SFF_8079 = 0x01
+    SFF_8431_8_4_2_RX_ONLY  = 0x02
+    SFF_8431_8_4_2_TX_ONLY  = 0x04
+    SFF_8431_8_4_2_INDEPENDENT = 0x06
+    FC_PI_5_16_8_4_RX_ONLY = 0x08
+    FC_PI_5_16_8_4_INDEPENDENT = 0x0a
+
+    def self.value name
+      self.const_get(name.to_s)
+    end
   end
 
   module OPTIONS
@@ -94,6 +172,14 @@ module SFP
     TX_FAULT = 0x08
     LOSS_OF_SIGNAL_INVERTED = 0x04
     LOSS_OF_SIGNAL = 0x02
+
+    def self.value name
+      self.const_get(name.to_s)
+    end
+
+    def self.all
+      self.constants.map{|name| self.const_get(name) }
+    end
   end
 
   module DIAGNOSTIC_MONITORING_TYPE
@@ -103,6 +189,14 @@ module SFP
     EXTERNAL_CALIBRATED = 0x10
     RECEIVED_POWER_MEASUREMENT_AVERAGE = 0x08
     ADDRESS_CHANGE_REQUIRED = 0x04
+
+    def self.value name
+      self.const_get(name.to_s)
+    end
+
+    def self.all
+      self.constants.map{|name| self.const_get(name) }
+    end
   end
 
   module ENHANCED_OPTIONS
@@ -113,6 +207,14 @@ module SFP
     SOFT_RATE_SELECT = 0x08
     APPLICATION_SELECT_CONTROL = 0x04
     SOFT_RATE_SELECT_8431 = 0x02
+
+    def self.value name
+      self.const_get(name.to_s)
+    end
+
+    def self.all
+      self.constants.map{|name| self.const_get(name) }
+    end
   end
 
   class EEPROM
@@ -123,9 +225,10 @@ module SFP
       @identifier = 0
       @ext_identifier = 0
       @connector = 0
-      @transciever = 0
+      @transciever = []
       @encoding = 0
       @br = 0
+      @rate_identifier = 0
       @length_sm_km = 0
       @length_sm_100m = 0
       @length_mm500_10m = 0
@@ -148,19 +251,60 @@ module SFP
 
       if !str.nil? && str.length == 256
         parse_hexstr(str)
+      elsif !str.nil? && str.length == 128
+        parse_hex(str)
       else
         return
       end
     end
 
+    def syms_to_val(mod, syms)
+      syms = [syms] if syms.class != Array
+      ret = 0
+
+      syms.each{|sym|
+        ret |= mod.value(sym)
+      }
+
+      return ret
+    end
+
+    def val_to_sym(mod, val)
+      mod.constants.each{|sym|
+        if val == mod.const_get(sym)
+          return sym
+        end
+      }
+      return val
+    end
+
+    def val_to_syms(mod, val)
+      ret = []
+      mod.constants.each{|sym|
+        ret << sym if val & mod.const_get(sym) != 0
+      }
+
+      return ret
+    end
+
     def to_hex
-      base = [@identifier, @ext_identifier, @connector, @transciever>>32, @transciever, @encoding, @br, 0, @length_sm_km, @length_sm_100m, @length_mm500_10m, @length_mm625_10m, @length_copper, 0, @vendor_name, 0, @vendor_oui.pack('C3'), @vendor_pn, @vendor_rev, @wavelength, 0].pack("CCCNNCCCCCCCCCA16Ca3A16A4nC")
+      identifier = @identifier.class == Fixnum ? @identifier : syms_to_val(IDENTIFIER, @identifier)
+      connector = @connector.class == Fixnum ? @connector : syms_to_val(CONNECTOR, @connector)
+      transciever = (@transciever.class == Fixnum || @transciever.class == Bignum) ? @transciever : syms_to_val(TRANSCIEVER, @transciever)
+      encoding = @encoding.class == Fixnum ? @encoding : syms_to_val(ENCODING, @encoding)
+      br = @br.class == Fixnum ? @br : syms_to_val(BR, @br)
+      rate_identifier = @rate_identifier.class == Fixnum ? @rate_identifier : syms_to_val(RATE_IDENTIFIER, rate_identifier)
+      options = @options.class == Fixnum ? @options : syms_to_val(OPTIONS, @options)
+      diagnostic_monitoring_type = @diagnostic_monitoring_type.class == Fixnum ? @diagnostic_monitoring_type : syms_to_val(DIAGNOSTIC_MONITORING_TYPE, diagnostic_monitoring_type)
+      enhanced_options = @enhanced_options.class == Fixnum ? @enhanced_options : syms_to_val(ENHANCED_OPTIONS, @enhanced_options)
+
+      base = [identifier, @ext_identifier, connector, transciever>>32, transciever, encoding, br, rate_identifier, @length_sm_km, @length_sm_100m, @length_mm500_10m, @length_mm625_10m, @length_copper, 0, @vendor_name, 0, @vendor_oui.pack('C3'), @vendor_pn, @vendor_rev, @wavelength, 0].pack("CCCNNCCCCCCCCCA16Ca3A16A4nC")
 
       c = 0
       base.each_byte{|b| c += b}
       base+= [(c%256).to_s(16)].pack("H2")
 
-      ext = [@options, @br_max, @br_min, @vendor_sn, @date_code, @diagnostic_monitoring_type, @enhanced_options, @sff_8472_compliance].pack("nCCA16A8CCC")
+      ext = [options, @br_max, @br_min, @vendor_sn, @date_code, diagnostic_monitoring_type, enhanced_options, @sff_8472_compliance].pack("nCCA16A8CCC")
       c = 0
       ext.each_byte{|b| c += b}
       ext+= [(c%256).to_s(16)].pack("H2")
@@ -170,18 +314,33 @@ module SFP
       return base+ext+vendor_specific
     end
 
+    def parse_hex(str)
+      return false if str.length != 128
+      tr_1 = nil
+      tr_2 = nil
+      oui = nil
+      identifier, @ext_identifier, connector, tr_1, tr_2, encoding, br, rate_identifier, @length_sm_km, @length_sm_100m, @length_mm500_10m, @length_mm625_10m, @length_copper,a, @vendor_name,a, oui, @vendor_pn, @vendor_rev, @wavelength,a,a,options, @br_max, @br_min, @vendor_sn, @date_code, diagnostic_monitoring_type, enhanced_options, @sff_8472_compliance, a, @vendor_specific = str.unpack("CCCNNCCCCCCCCCA16Ca3A16A4nCCnCCA16A8CCCCa*")
+      transciever = (tr_1<<32) + tr_2
+      @vendor_oui = oui.unpack('C3')
+
+      @identifier = val_to_sym(IDENTIFIER, identifier)
+      @connector = val_to_sym(CONNECTOR, connector)
+      @transciever = val_to_syms(TRANSCIEVER, transciever)
+      @encoding = val_to_sym(ENCODING, encoding)
+      @br = val_to_sym(BR, br)
+      @rate_identifier = val_to_sym(RATE_IDENTIFIER, rate_identifier)
+      @options = val_to_syms(OPTIONS, options)
+      @diagnostic_monitoring_type = val_to_syms(DIAGNOSTIC_MONITORING_TYPE, diagnostic_monitoring_type)
+      @enhanced_options = val_to_syms(ENHANCED_OPTIONS, enhanced_options)
+    end
+
     def to_hexstr
       return to_hex.unpack("H*")[0]
     end
 
     def parse_hexstr(str)
       return false if str.length != 256
-      tr_1 = nil
-      tr_2 = nil
-      oui = nil
-      @identifier, @ext_identifier, @connector, tr_1, tr_2, @encoding, @br, a, @length_sm_km, @length_sm_100m, @length_mm500_10m, @length_mm625_10m, @length_copper,a, @vendor_name,a, oui, @vendor_pn, @vendor_rev, @wavelength,a,a,@options, @br_max, @br_min, @vendor_sn, @date_code, @diagnostic_monitoring_type, @enhanced_options, @sff_8472_compliance, a, @vendor_specific = [str].pack("H*").unpack("CCCNNCCCCCCCCCA16Ca3A16A4nCCnCCA16A8CCCCa*")
-      @transciever = (tr_1<<32) + tr_2
-      @vendor_oui = oui.unpack('C3')
+      parse_hex [str].pack("H*")
     end
   end
 end
