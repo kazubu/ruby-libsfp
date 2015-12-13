@@ -151,7 +151,7 @@ module SFP
 
   class EEPROM
 
-    attr_accessor :identifier, :ext_identifier, :connector, :transciever, :encoding, :br, :length_sm_km, :length_sm_100m, :length_mm500_10m, :length_mm625_10m, :length_copper, :length_mm500_om3_10m, :vendor_name, :transciever2, :vendor_oui, :vendor_pn, :vendor_rev, :wavelength, :used_for_dwdm_modules, :options, :br_max, :br_min, :vendor_sn, :date_code, :diagnostic_monitoring_type, :enhanced_options, :sff_8472_compliance, :vendor_specific
+    attr_accessor :identifier, :ext_identifier, :connector, :transciever, :encoding, :br, :length_sm_km, :length_sm_100m, :length_mm500_10m, :length_mm625_10m, :length_copper, :length_mm500_om3_10m, :vendor_name, :transciever2, :vendor_oui, :vendor_pn, :vendor_rev, :wavelength, :used_for_dwdm_modules, :cc_base, :options, :br_max, :br_min, :vendor_sn, :date_code, :diagnostic_monitoring_type, :enhanced_options, :sff_8472_compliance, :cc_ext, :vendor_specific
 
     def initialize(str=nil)
       @identifier = 0
@@ -237,6 +237,27 @@ module SFP
       return @cc_ext == hex[95].unpack('C')[0]
     end
 
+    def update_cc_base
+      hex = to_hex
+      @cc_base = hex[63].unpack('C')[0]
+    end
+
+    def update_cc_ext
+      hex = to_hex
+      @cc_ext = hex[95].unpack('C')[0]
+    end
+
+    def update_cc
+      update_cc_base
+      update_cc_ext
+    end
+
+    def calc_cc(data)
+      c = 0
+      data.each_byte{|b| c+= b}
+      return c%256
+    end
+
     def to_hex
       identifier = @identifier.class == Fixnum ? @identifier : syms_to_val(IDENTIFIER, @identifier)
       connector = @connector.class == Fixnum ? @connector : syms_to_val(CONNECTOR, @connector)
@@ -250,15 +271,11 @@ module SFP
 
       base = [identifier, @ext_identifier, connector, transciever>>32, transciever, encoding, br, rate_identifier, @length_sm_km, @length_sm_100m, @length_mm500_10m, @length_mm625_10m, @length_copper, @length_mm500_om3_10m, @vendor_name, @transciever2, @vendor_oui.pack('C3'), @vendor_pn, @vendor_rev, @wavelength, @used_for_dwdm_modules].pack("CCCNNCCCCCCCCCA16Ca3A16A4nC")
 
-      c = 0
-      base.each_byte{|b| c += b}
-      cc_base = [(c%256).to_s(16)].pack("H2")
+      cc_base = [calc_cc(base)].pack("C")
       base += cc_base
 
       ext = [options, @br_max, @br_min, @vendor_sn, @date_code, diagnostic_monitoring_type, enhanced_options, @sff_8472_compliance].pack("nCCA16A8CCC")
-      c = 0
-      ext.each_byte{|b| c += b}
-      cc_ext = [(c%256).to_s(16)].pack("H2")
+      cc_ext = [calc_cc(ext)].pack("C")
       ext += cc_ext
 
       vendor_specific = [@vendor_specific].pack("a32")
