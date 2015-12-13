@@ -15,14 +15,6 @@ module SFP
     QSFP = 0x0C
     QSFPP = 0x0D
     CXP = 0x0E
-
-    def self.value name
-      self.const_get(name.to_s)
-    end
-
-    def self.all
-      self.constants.map{|name| self.const_get(name) }
-    end
   end
 
   module CONNECTOR
@@ -42,15 +34,6 @@ module SFP
     HSSDC_II = 0x20
     COPPER_PIGTAIL = 0x21
     RJ45 = 0x22
-
-
-    def self.value name
-      self.const_get(name.to_s)
-    end
-
-    def self.all
-      self.constants.map{|name| self.const_get(name) }
-    end
   end
 
   module TRANSCIEVER
@@ -113,14 +96,6 @@ module SFP
     FC_SPEED_400M = 1<<4
     FC_SPEED_200M = 1<<2
     FC_SPEED_100M = 1
-
-    def self.value name
-      self.const_get(name.to_s)
-    end
-
-    def self.all
-      self.constants.map{|name| self.const_get(name) }
-    end
   end
 
   module ENCODING
@@ -130,27 +105,11 @@ module SFP
     ENC_MANCHESTER = 4
     ENC_SONET_SCRAMBLED = 5
     ENC_64B66B = 6
-
-    def self.value name
-      self.const_get(name.to_s)
-    end
-
-    def self.all
-      self.constants.map{|name| self.const_get(name) }
-    end
   end
 
   module BR
     BR_1250M = 0x0d
     BR_2125M = 0x15
-
-    def self.value name
-      self.const_get(name.to_s)
-    end
-
-    def self.all
-      self.constants.map{|name| self.const_get(name) }
-    end
   end
 
   module RATE_IDENTIFIER
@@ -160,10 +119,6 @@ module SFP
     SFF_8431_8_4_2_INDEPENDENT = 0x06
     FC_PI_5_16_8_4_RX_ONLY = 0x08
     FC_PI_5_16_8_4_INDEPENDENT = 0x0a
-
-    def self.value name
-      self.const_get(name.to_s)
-    end
   end
 
   module OPTIONS
@@ -172,14 +127,6 @@ module SFP
     TX_FAULT = 0x08
     LOSS_OF_SIGNAL_INVERTED = 0x04
     LOSS_OF_SIGNAL = 0x02
-
-    def self.value name
-      self.const_get(name.to_s)
-    end
-
-    def self.all
-      self.constants.map{|name| self.const_get(name) }
-    end
   end
 
   module DIAGNOSTIC_MONITORING_TYPE
@@ -189,14 +136,6 @@ module SFP
     EXTERNAL_CALIBRATED = 0x10
     RECEIVED_POWER_MEASUREMENT_AVERAGE = 0x08
     ADDRESS_CHANGE_REQUIRED = 0x04
-
-    def self.value name
-      self.const_get(name.to_s)
-    end
-
-    def self.all
-      self.constants.map{|name| self.const_get(name) }
-    end
   end
 
   module ENHANCED_OPTIONS
@@ -207,14 +146,6 @@ module SFP
     SOFT_RATE_SELECT = 0x08
     APPLICATION_SELECT_CONTROL = 0x04
     SOFT_RATE_SELECT_8431 = 0x02
-
-    def self.value name
-      self.const_get(name.to_s)
-    end
-
-    def self.all
-      self.constants.map{|name| self.const_get(name) }
-    end
   end
 
   class EEPROM
@@ -263,7 +194,7 @@ module SFP
       ret = 0
 
       syms.each{|sym|
-        ret |= mod.value(sym)
+        ret |= mod.const_get(sym.to_s)
       }
 
       return ret
@@ -271,7 +202,7 @@ module SFP
 
     def val_to_sym(mod, val)
       mod.constants.each{|sym|
-        if val == mod.const_get(sym)
+        if val == mod.const_get(sym.to_s)
           return sym
         end
       }
@@ -281,7 +212,7 @@ module SFP
     def val_to_syms(mod, val)
       ret = []
       mod.constants.each{|sym|
-        ret << sym if val & mod.const_get(sym) != 0
+        ret << sym if val & mod.const_get(sym.to_s) != 0
       }
 
       return ret
