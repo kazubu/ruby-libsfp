@@ -1,4 +1,4 @@
-require './eeprom'
+require '../eeprom'
 include SFP
 
 def sample_finisar(_sfp)

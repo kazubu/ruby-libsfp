@@ -110,6 +110,7 @@ module SFP
   module BR
     BR_1250M = 0x0d
     BR_2125M = 0x15
+    BR_10300M = 0x67
   end
 
   module RATE_IDENTIFIER
@@ -150,7 +151,7 @@ module SFP
 
   class EEPROM
 
-    attr_accessor :identifier, :ext_identifier, :connector, :transciever, :encoding, :br, :length_sm_km, :length_sm_100m, :length_mm500_10m, :length_mm625_10m, :length_copper, :vendor_name, :vendor_oui, :vendor_pn, :vendor_rev, :wavelength, :options, :br_max, :br_min, :vendor_sn, :date_code, :diagnostic_monitoring_type, :enhanced_options, :sff_8472_compliance, :vendor_specific
+    attr_accessor :identifier, :ext_identifier, :connector, :transciever, :encoding, :br, :length_sm_km, :length_sm_100m, :length_mm500_10m, :length_mm625_10m, :length_copper, :length_mm500_om3_10m, :vendor_name, :transciever2, :vendor_oui, :vendor_pn, :vendor_rev, :wavelength, :used_for_dwdm_modules, :options, :br_max, :br_min, :vendor_sn, :date_code, :diagnostic_monitoring_type, :enhanced_options, :sff_8472_compliance, :vendor_specific
 
     def initialize(str=nil)
       @identifier = 0
@@ -165,11 +166,14 @@ module SFP
       @length_mm500_10m = 0
       @length_mm625_10m = 0
       @length_copper = 0
+      @length_mm500_om3_10m = 0
       @vendor_name = ""
+      @transciever2 = 0
       @vendor_oui = [0x00, 0x00, 0x00]
       @vendor_pn = ""
       @vendor_rev = ""
       @wavelength = 0
+      @used_for_dwdm_modules = 0
       @options = 0
       @br_max = 0x00
       @br_min = 0x00
@@ -179,6 +183,8 @@ module SFP
       @enhanced_options = 0
       @sff_8472_compliance = 0
       @vendor_specific = ""
+      @cc_base = 0
+      @cc_ext = 0
 
       if !str.nil? && str.length == 256
         parse_hexstr(str)
@@ -221,6 +227,16 @@ module SFP
       return ret
     end
 
+    def validate_cc_base
+      hex = to_hex
+      return @cc_base == hex[63].unpack('C')[0]
+    end
+
+    def validate_cc_ext
+      hex = to_hex
+      return @cc_ext == hex[95].unpack('C')[0]
+    end
+
     def to_hex
       identifier = @identifier.class == Fixnum ? @identifier : syms_to_val(IDENTIFIER, @identifier)
       connector = @connector.class == Fixnum ? @connector : syms_to_val(CONNECTOR, @connector)
@@ -232,16 +248,18 @@ module SFP
       diagnostic_monitoring_type = @diagnostic_monitoring_type.class == Fixnum ? @diagnostic_monitoring_type : syms_to_val(DIAGNOSTIC_MONITORING_TYPE, @diagnostic_monitoring_type)
       enhanced_options = @enhanced_options.class == Fixnum ? @enhanced_options : syms_to_val(ENHANCED_OPTIONS, @enhanced_options)
 
-      base = [identifier, @ext_identifier, connector, transciever>>32, transciever, encoding, br, rate_identifier, @length_sm_km, @length_sm_100m, @length_mm500_10m, @length_mm625_10m, @length_copper, 0, @vendor_name, 0, @vendor_oui.pack('C3'), @vendor_pn, @vendor_rev, @wavelength, 0].pack("CCCNNCCCCCCCCCA16Ca3A16A4nC")
+      base = [identifier, @ext_identifier, connector, transciever>>32, transciever, encoding, br, rate_identifier, @length_sm_km, @length_sm_100m, @length_mm500_10m, @length_mm625_10m, @length_copper, @length_mm500_om3_10m, @vendor_name, @transciever2, @vendor_oui.pack('C3'), @vendor_pn, @vendor_rev, @wavelength, @used_for_dwdm_modules].pack("CCCNNCCCCCCCCCA16Ca3A16A4nC")
 
       c = 0
       base.each_byte{|b| c += b}
-      base+= [(c%256).to_s(16)].pack("H2")
+      cc_base = [(c%256).to_s(16)].pack("H2")
+      base += cc_base
 
       ext = [options, @br_max, @br_min, @vendor_sn, @date_code, diagnostic_monitoring_type, enhanced_options, @sff_8472_compliance].pack("nCCA16A8CCC")
       c = 0
       ext.each_byte{|b| c += b}
-      ext+= [(c%256).to_s(16)].pack("H2")
+      cc_ext = [(c%256).to_s(16)].pack("H2")
+      ext += cc_ext
 
       vendor_specific = [@vendor_specific].pack("a32")
 
@@ -253,7 +271,7 @@ module SFP
       tr_1 = nil
       tr_2 = nil
       oui = nil
-      identifier, @ext_identifier, connector, tr_1, tr_2, encoding, br, rate_identifier, @length_sm_km, @length_sm_100m, @length_mm500_10m, @length_mm625_10m, @length_copper,a, @vendor_name,a, oui, @vendor_pn, @vendor_rev, @wavelength,a,a,options, @br_max, @br_min, @vendor_sn, @date_code, diagnostic_monitoring_type, enhanced_options, @sff_8472_compliance, a, @vendor_specific = str.unpack("CCCNNCCCCCCCCCA16Ca3A16A4nCCnCCA16A8CCCCa*")
+      identifier, @ext_identifier, connector, tr_1, tr_2, encoding, br, rate_identifier, @length_sm_km, @length_sm_100m, @length_mm500_10m, @length_mm625_10m, @length_copper, @length_mm500_om3_10m, @vendor_name, @transciever2, oui, @vendor_pn, @vendor_rev, @wavelength, @used_for_dwdm_modules, @cc_base, options, @br_max, @br_min, @vendor_sn, @date_code, diagnostic_monitoring_type, enhanced_options, @sff_8472_compliance, @cc_ext, @vendor_specific = str.unpack("CCCNNCCCCCCCCCA16Ca3A16A4nCCnCCA16A8CCCCa*")
       transciever = (tr_1<<32) + tr_2
       @vendor_oui = oui.unpack('C3')
 
