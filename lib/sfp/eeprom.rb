@@ -108,6 +108,7 @@ module SFP
   end
 
   module BR
+    BR_1200M = 0x0c
     BR_1250M = 0x0d
     BR_2125M = 0x15
     BR_10300M = 0x67
