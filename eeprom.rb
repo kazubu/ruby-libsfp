@@ -224,9 +224,9 @@ module SFP
       transciever = (@transciever.class == Fixnum || @transciever.class == Bignum) ? @transciever : syms_to_val(TRANSCIEVER, @transciever)
       encoding = @encoding.class == Fixnum ? @encoding : syms_to_val(ENCODING, @encoding)
       br = @br.class == Fixnum ? @br : syms_to_val(BR, @br)
-      rate_identifier = @rate_identifier.class == Fixnum ? @rate_identifier : syms_to_val(RATE_IDENTIFIER, rate_identifier)
+      rate_identifier = @rate_identifier.class == Fixnum ? @rate_identifier : syms_to_val(RATE_IDENTIFIER, @rate_identifier)
       options = @options.class == Fixnum ? @options : syms_to_val(OPTIONS, @options)
-      diagnostic_monitoring_type = @diagnostic_monitoring_type.class == Fixnum ? @diagnostic_monitoring_type : syms_to_val(DIAGNOSTIC_MONITORING_TYPE, diagnostic_monitoring_type)
+      diagnostic_monitoring_type = @diagnostic_monitoring_type.class == Fixnum ? @diagnostic_monitoring_type : syms_to_val(DIAGNOSTIC_MONITORING_TYPE, @diagnostic_monitoring_type)
       enhanced_options = @enhanced_options.class == Fixnum ? @enhanced_options : syms_to_val(ENHANCED_OPTIONS, @enhanced_options)
 
       base = [identifier, @ext_identifier, connector, transciever>>32, transciever, encoding, br, rate_identifier, @length_sm_km, @length_sm_100m, @length_mm500_10m, @length_mm625_10m, @length_copper, 0, @vendor_name, 0, @vendor_oui.pack('C3'), @vendor_pn, @vendor_rev, @wavelength, 0].pack("CCCNNCCCCCCCCCA16Ca3A16A4nC")
