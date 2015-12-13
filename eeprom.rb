@@ -215,6 +215,9 @@ module SFP
         ret << sym if val & mod.const_get(sym.to_s) != 0
       }
 
+      # return original value if value contains unsupported something
+      return val if syms_to_val(mod, ret) != val
+
       return ret
     end
 
