@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 
 require 'pp'
-require '../eeprom.rb'
-require '../rw.rb'
+require '../lib/sfp/eeprom.rb'
+require '../lib/sfp/rw.rb'
 
 if ARGV.length != 1
   puts 'Usage:'
