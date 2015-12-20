@@ -81,6 +81,8 @@ module SFP
     FC_TXT_SN = 1<<22
     FC_TXT_SL = 1<<21
     FC_TXT_LL = 1<<20
+    ACTIVE_CABLE = 1<<19
+    PASSIVE_CABLE = 1<<18
 
     FC_TXM_TW = 1<<15
     FC_TXM_TP = 1<<14
@@ -95,7 +97,7 @@ module SFP
     FC_SPEED_1600M = 1<<5
     FC_SPEED_400M = 1<<4
     FC_SPEED_200M = 1<<2
-    FC_SPEED_100M = 1
+    FC_SPEED_100M = 1<<0
   end
 
   module ENCODING
