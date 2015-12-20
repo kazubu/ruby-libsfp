@@ -14,9 +14,11 @@ module SFP
     def write(data)
       daddr = 0
       ret = 0
-      data.each_char{|c|
-        ret = device.write(@addr, daddr, c)
-        daddr += 1
+      data_block = data.each_char.each_slice(8).map(&:join)
+
+      data_block.each{|d|
+        ret = device.write(@addr, daddr, d)
+        daddr += d.length
         sleep 0.05
       }
       return ret
