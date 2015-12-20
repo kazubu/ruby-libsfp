@@ -22,6 +22,13 @@ module SFP
       return ret
     end
 
+    def write_password(data)
+      return nil if data.length != 4
+
+      device.write(0x51, 0x7b, data)
+    end
+
+
 private
 
     def device
